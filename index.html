@@ -2151,25 +2151,35 @@ function scrollToRow(row){
 const respostasLegiveis = buildResultsPerguntasRespostas(FORM_QUESTIONS, rawPayload);
 const scoring = buildScoringResult(FORM_QUESTIONS, rawPayload, INDICATORS_CONFIG);
 const resultsPayload = respostasLegiveis;
-const resultsMetaPayload = Object.keys(INDICATORS_CONFIG).map((key) => {
+const resultsMetaPayload = [];
+let metaOrder = 1;
+
+Object.keys(INDICATORS_CONFIG).forEach((key) => {
   const indicator = scoring.indicators[key];
   const cfg = INDICATORS_CONFIG[key] || {};
+
+  if (!indicator) return;
+
   const row = {
+    order: metaOrder++,
     key,
-    label: cfg.label || indicator?.label || key,
-    sum: indicator?.sum ?? null,
-    maxPossible: indicator?.maxPossible ?? null,
-    answeredCount: indicator?.answeredCount ?? 0,
-    ignoredCount: indicator?.ignoredCount ?? 0,
-   
+    label: cfg.label || indicator.label || key,
+    value: indicator.sum ?? null,
+    maxPossible: indicator.maxPossible ?? null,
+    answeredCount: indicator.answeredCount ?? 0,
+    ignoredCount: indicator.ignoredCount ?? 0
   };
 
-  if (Array.isArray(cfg.cutoffs) && cfg.cutoffs.length && Number.isFinite(row.sum)) {
-    const rule = interpretByCutoffs(row.sum, cfg.cutoffs);
+  if (Array.isArray(cfg.cutoffs) && cfg.cutoffs.length && Number.isFinite(row.value)) {
+    const rule = interpretByCutoffs(row.value, cfg.cutoffs);
     if (rule?.text) row.interpretacao = rule.text;
   }
-if (indicator?.counts) row.counts = indicator.counts;
-  return row;
+
+  if (indicator.counts) {
+    row.counts = indicator.counts;
+  }
+
+  resultsMetaPayload.push(row);
 });
 
     const { data: patient, error: patientError } = await supabaseClient
